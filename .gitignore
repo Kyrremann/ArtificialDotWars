@@ -4,3 +4,13 @@
 *.jar
 *.war
 *.ear
+
+# Emacs backup
+*.*~
+
+# Eclipse
+bin/
+.classpath
+.project
+.settings/
+
