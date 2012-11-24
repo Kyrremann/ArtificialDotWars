@@ -7,14 +7,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream.GetField;
 
-public class BattleField {
+public class MapLevel {
 
 	public static Type[][] loadMap(String mapName) {
 		Type[][] map = new Type[Gfx.YUNIT][Gfx.XUNIT];
 
 		BufferedReader in = null;
 		try {
-			in = new BufferedReader(new FileReader(mapName));
+			in = new BufferedReader(new FileReader("res/" + mapName));
 //			new InputStreamReader(BattleField.class
 //					.getClassLoader().getResourceAsStream(mapName)));
 		} catch (NullPointerException e) {

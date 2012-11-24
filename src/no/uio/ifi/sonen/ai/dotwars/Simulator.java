@@ -5,29 +5,33 @@ import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferStrategy;
-import java.io.File;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.ImageIcon;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
+import no.uio.ifi.sonen.ai.dotwars.team.dumb.Dumb;
+
 public class Simulator {
 
 	private Gfx gfx;
 	private BufferStrategy strategy;
-	private int delay = 1000;
+	private int delay = 1;
 	private Timer timer;
 	private Type[][] map;
+	private List<UnitGroup> movingUnitGroups;
 
 	/** All the images we need. */
 	private ImageIcon imgEmpty;
 	private ImageIcon imgResource;
 	private ImageIcon imgCastle;
 
-	public Simulator() {
+	public Simulator(String mapName) {
 
-		map = BattleField.loadMap("res/test.map");
+		movingUnitGroups = new ArrayList<UnitGroup>();
+		map = MapLevel.loadMap(mapName);
 
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
@@ -46,6 +50,58 @@ public class Simulator {
 				timer.start();
 			}
 		});
+
+		// Start the game
+		letTheGameBegin();
+	}
+
+	private void letTheGameBegin() {
+		// Create players from arguments
+		final Player playerOne = new Player(1, 20, Color.red, 45, 15);
+		final Dumb dumb = new Dumb("Dumb", playerOne.getPlayer());
+
+		Thread playerOneThread = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				ArrayList<UnitGroup> unitGroups = new ArrayList<UnitGroup>();
+
+				while (true) { // This is where the fun is
+					// First test;
+					// Don't give the users time to think, fake real time
+					unitGroups = dumb.action(playerOne.getCastle());
+					for (UnitGroup group : unitGroups) {
+						moveUnit(group);
+					}
+				}
+			}
+		});
+		playerOneThread.start();
+		
+		final Player playerTwo = new Player(2, 20, Color.red, 4, 15);
+		final Dumb dumbTwo = new Dumb("Dumb", playerTwo.getPlayer());
+
+		Thread playerTwoThread = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				ArrayList<UnitGroup> unitGroups = new ArrayList<UnitGroup>();
+
+				while (true) { // This is where the fun is
+					// First test;
+					// Don't give the users time to think, fake real time
+					unitGroups = dumbTwo.action(playerTwo.getCastle());
+					for (UnitGroup group : unitGroups) {
+						moveUnit(group);
+					}
+				}
+			}
+		});
+		playerTwoThread.start();
+	}
+
+	synchronized private void moveUnit(UnitGroup group) {
+		movingUnitGroups.add(group);
 	}
 
 	/**
@@ -98,11 +154,44 @@ public class Simulator {
 					break;
 				}
 
-				graphics.drawImage(drawMe.getImage(), (x * Gfx.UNIT), (y
-						* Gfx.UNIT), null, null);
+				graphics.drawImage(drawMe.getImage(), (x * Gfx.UNIT),
+						(y * Gfx.UNIT), null, null);
 			}
 		}
 
+		// Draw peasants with this
+		for (UnitGroup group : movingUnitGroups) {
+			int x = group.getAtX(), y = group.getAtY();
+			graphics.setColor(getColor(group.getPlayer()));
+			graphics.fillRect(x, y, 6, 6);
+			
+			if (group.getGoX() == x && group.getGoY() == y) {
+				graphics.setColor(Color.white);
+				graphics.drawChars("DONE".toCharArray(), 0, 4, x, y - 6);
+				continue;
+			}
+			
+			if (group.getGoX() > x)
+				x += 6;
+			else if (group.getGoX() < x)
+				x -= 6;
+			if (group.getGoY() > y)
+				y += 6;
+			else if (group.getGoY() < y)
+				y -= 6;
+			
+			group.unitAt(x, y);
+		}
+
 		graphics.dispose();
+	}
+	
+	public Color getColor(int player) {
+		if (player == 1)
+			return Color.blue;
+		else if (player == 2)
+			return Color.red;
+		
+		return Color.pink;
 	}
 }
